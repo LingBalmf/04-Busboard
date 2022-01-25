@@ -3,17 +3,36 @@ import fetch from "node-fetch";
 import promptSync from "prompt-sync";
 const prompt = promptSync();
 
-//let userPostCode = prompt("Please enter a postcode:")
+let userPostCode = prompt("Please enter a postcode:")
+
 const stopTypes = "NaptanPublicBusCoachTram";
 
+function listFirstArrival (stopId) {
+     fetch(`https://api.tfl.gov.uk/StopPoint/${stopId}/Arrivals`)
+    .then(buses => buses.json())
+    .then(function (buses) {
+        let counter = 0;
+        buses.sort((bus1, bus2) => bus1.timeToStation - bus2.timeToStation);
+        console.log(`Buses.length is ${buses.length}` );
+        
+        if (buses.length === 0) {
+            console.log(`No next bus listed for stop  ${stopId}`);
+        } else {
+        console.log (`The next bus for stop ID ${stopId} 
+            is ${buses[0].lineId} in the ${buses[0].direction} 
+            direction to ${buses[0].destinationName} 
+            arriving in ${buses[0].timeToStation} seconds`);
+        }
+    })
+}
 
-fetch(`https://api.postcodes.io/postcodes?q=ub55aw`)
+fetch(`https://api.postcodes.io/postcodes?q=${userPostCode}`)
     .then(postCodeInfo => postCodeInfo.json())
     .then(function (postCodeInfo) {
         const lon = postCodeInfo.result[0].longitude;
         console.log("Longitude is: " + lon);
         const lat = postCodeInfo.result[0].latitude;
-        console.log("Longitude is: " + lat);
+        console.log("Latitude is: " + lat);
         return fetch(`https://api.tfl.gov.uk/StopPoint/?lat=${lat}&lon=${lon}&stopTypes=${stopTypes}&radius=400`);
 
     })
@@ -27,27 +46,14 @@ fetch(`https://api.postcodes.io/postcodes?q=ub55aw`)
         //const naptanId = stop[0].naptanId;
         
        for (const stopPoint of stops) {
-            console.log(`StopPoint ID ${stopPoint.naptanId} is ${stopPoint.distance}m away`);
+            console.log(`StopPoint ID ${stopPoint.naptanId} name ${stopPoint.commonName} is ${Math.round(stopPoint.distance)} metres away`);
         }
-        const stopPointOneName = stops[0].commonName;
+ 
         const stopPointOneId = stops[0].naptanId;
-        const stopPointTwoName = stops[1].commonName;
         const stopPointTwoId = stops[1].naptanId;
-      //  const stopPointTwoName = stops[1].commonName;
+        listFirstArrival(stopPointOneId);
+        listFirstArrival(stopPointTwoId);
 
-      return fetch(`https://api.tfl.gov.uk/StopPoint/${stopPointTwoId}/Arrivals`);
+    
 
     })
-    .then(buses => buses.json())
-    .then(function (buses) {
-     //   const lineId = buses[0].lineId;
-     //   const direction = buses[0].direction;
-    //  const expectedArrivalTime=buses[0].expectedArrival;
-        buses.sort((bus1, bus2) => bus1.timeToStation - bus2.timeToStation);
-        console.log (`The next bus is ${buses[0].lineId} in the ${buses[0].direction} direction to ${buses[0].destinationName} arriving in ${buses[0].timeToStation} seconds`);
-        /*for (const bus of buses ) {
-            console.log (`Bus ${bus.lineId} in the ${bus.direction} direction to ${bus.destinationName} arriving in ${bus.timeToStation} seconds`);
-        
-        } */
-    })
-
